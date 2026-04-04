@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: stg_estabelecimentos
+    description: "Hospitais limpos: dedup por CNES, sem desabilitados"
+    columns:
+      - name: codigo_cnes
+        tests: [unique, not_null]
+      - name: codigo_tipo_unidade
+        tests:
+          - accepted_values:
+              arguments:
+                values: [5, 7, 15]
+      - name: codigo_municipio
+        tests: [not_null]
+
+  - name: stg_municipios
+    description: "Municipios IBGE com codigo truncado pra 6 digitos"
+    columns:
+      - name: codigo_municipio
+        tests: [unique, not_null]
+      - name: sigla_uf
+        tests: [not_null]
+
+  - name: stg_populacao
+    description: "Populacao por municipio (Censo 2022)"
+    columns:
+      - name: codigo_municipio
+        tests: [unique, not_null]
+      - name: populacao
+        tests: [not_null]

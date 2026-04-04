@@ -1,0 +1,20 @@
+[project]
+name = "datasus-leitos-pipeline"
+version = "0.1.0"
+description = "Pipeline de dados de leitos hospitalares do DATASUS"
+requires-python = ">=3.11"
+dependencies = [
+    "requests>=2.31",
+    "pyarrow>=15.0",
+    "dbt-core>=1.7",
+    "dbt-duckdb>=1.7",
+    "duckdb>=0.10",
+    "plotly>=5.18",
+    "pandas>=2.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.3",
+    "pytest>=8.0",
+]

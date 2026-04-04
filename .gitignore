@@ -1,0 +1,31 @@
+# Dados brutos (cada projeto gera os seus via Makefile)
+**/data/raw/
+**/data/bronze/
+**/data/silver/
+**/data/gold/
+**/data/normalized/
+**/data/analytics/
+
+# DuckDB
+*.duckdb
+*.duckdb.wal
+
+# Python
+__pycache__/
+.venv/
+*.egg-info/
+dist/
+.user.yml
+
+# dbt
+**/target/
+**/dbt_packages/
+**/logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

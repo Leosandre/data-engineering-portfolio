@@ -1,0 +1,6 @@
+datasus_leitos:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "data/datasus_leitos.duckdb"

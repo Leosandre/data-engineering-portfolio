@@ -1,0 +1,9 @@
+name: 'datasus_leitos'
+version: '1.0.0'
+profile: 'datasus_leitos'
+model-paths: ["models"]
+test-paths: ["tests"]
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"

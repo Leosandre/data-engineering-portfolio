@@ -1,0 +1,20 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: main
+    tables:
+      - name: raw_estabelecimentos
+        description: "CNES/DATASUS - estabelecimentos hospitalares"
+        meta:
+          external_location: "read_parquet('data/raw/estabelecimentos.parquet')"
+
+      - name: raw_municipios
+        description: "IBGE - municipios com hierarquia geografica"
+        meta:
+          external_location: "read_parquet('data/raw/municipios.parquet')"
+
+      - name: raw_populacao
+        description: "IBGE/SIDRA - populacao Censo 2022"
+        meta:
+          external_location: "read_parquet('data/raw/populacao.parquet')"

@@ -1,0 +1,28 @@
+version: 2
+
+models:
+  - name: dim_localidades
+    columns:
+      - name: codigo_municipio
+        tests: [unique, not_null]
+
+  - name: dim_estabelecimentos
+    columns:
+      - name: codigo_cnes
+        tests: [unique, not_null]
+
+  - name: fct_leitos
+    description: "Capacidades por hospital, com score de complexidade (0-6)"
+    columns:
+      - name: codigo_cnes
+        tests: [unique, not_null]
+
+  - name: agg_leitos_por_uf
+    columns:
+      - name: sigla_uf
+        tests: [unique, not_null]
+
+  - name: agg_leitos_por_municipio
+    columns:
+      - name: codigo_municipio
+        tests: [unique, not_null]
