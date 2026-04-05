@@ -1,0 +1,15 @@
+[project]
+name = "aws-data-platform"
+version = "0.1.0"
+description = "Data platform AWS: multi-source integration, entity resolution, ML"
+requires-python = ">=3.11"
+dependencies = [
+    "polars>=1.0",
+    "pyarrow>=15.0",
+    "faker>=28.0",
+    "duckdb>=0.10",
+    "plotly>=5.18",
+    "pandas>=2.1",
+    "thefuzz>=0.22",
+    "python-Levenshtein>=0.25",
+]

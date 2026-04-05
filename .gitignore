@@ -5,6 +5,9 @@
 **/data/gold/
 **/data/normalized/
 **/data/analytics/
+**/data/synthetic/
+**/data/reconciled/
+**/data/ml/
 
 # DuckDB
 *.duckdb
@@ -22,6 +25,18 @@ dist/
 **/dbt_packages/
 **/logs/
 
+# AWS / Credenciais / Segredos — NUNCA commitar
+.aws/
+*.pem
+*.key
+*.env
+.env.*
+terraform.tfvars
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+
 # OS
 .DS_Store
 Thumbs.db
@@ -29,3 +44,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Terraform lock
+.terraform.tfstate.lock.info
