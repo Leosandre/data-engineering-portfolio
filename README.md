@@ -8,8 +8,9 @@ Cada projeto resolve um problema real com dados públicos, documentado com arqui
 | # | Projeto | Nível | Stack | Status |
 |---|---------|-------|-------|--------|
 | 01 | [Pipeline DATASUS — Capacidades Hospitalares](projects/01-datasus-leitos-pipeline/) | Básico | Python, dbt, DuckDB, Plotly | ✅ Concluído |
-| 02 | Em breve | Intermediário | TBD | ⏳ Planejado |
-| 03 | Em breve | Avançado | TBD | ⏳ Planejado |
+| 02 | [Pipeline ANAC — Pontualidade da Aviação Civil](projects/02-anac-voos-pipeline/) | Intermediário | Python, httpx, Polars, DuckDB, Plotly | ✅ Concluído |
+| 03 | [Pipeline GitHub — Flatten de JSON Aninhado](projects/03-github-json-pipeline/) | Intermediário | Python, httpx, Polars, DuckDB, Plotly | ✅ Concluído |
+| 04 | [Data Platform AWS — Multi-Source Integration + ML](projects/04-aws-data-platform/) | Avançado | Terraform, Glue, Redshift, SageMaker, QuickSight | ✅ Concluído |
 
 ## Como navegar
 
