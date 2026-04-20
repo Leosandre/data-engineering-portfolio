@@ -1,0 +1,105 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  POC S3 Tables — Stack 2/4: IAM
+  Role para Glue Jobs com least privilege + S3 Tables managed policy.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: s3tables-poc
+  CostTag:
+    Type: String
+    Default: stit-poc-s3tables
+
+Resources:
+  GlueJobRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-glue-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AmazonS3TablesFullAccess
+      Policies:
+        - PolicyName: S3DataAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: S3BucketAccess
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub
+                    - "arn:aws:s3:::${B}"
+                    - B: { Fn::ImportValue: !Sub "${ProjectName}-raw-bucket" }
+                  - !Sub
+                    - "arn:aws:s3:::${B}/*"
+                    - B: { Fn::ImportValue: !Sub "${ProjectName}-raw-bucket" }
+                  - !Sub
+                    - "arn:aws:s3:::${B}"
+                    - B: { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-bucket" }
+                  - !Sub
+                    - "arn:aws:s3:::${B}/*"
+                    - B: { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-bucket" }
+                  - !Sub
+                    - "arn:aws:s3:::${B}"
+                    - B: { Fn::ImportValue: !Sub "${ProjectName}-glue-scripts-bucket" }
+                  - !Sub
+                    - "arn:aws:s3:::${B}/*"
+                    - B: { Fn::ImportValue: !Sub "${ProjectName}-glue-scripts-bucket" }
+
+        - PolicyName: GlueCatalogAccess
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - glue:GetDatabase
+                  - glue:GetDatabases
+                  - glue:CreateDatabase
+                  - glue:GetTable
+                  - glue:GetTables
+                  - glue:CreateTable
+                  - glue:UpdateTable
+                  - glue:DeleteTable
+                  - glue:GetPartitions
+                  - glue:BatchCreatePartition
+                  - glue:GetCatalog
+                  - glue:GetCatalogs
+                Resource:
+                  - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog"
+                  - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:catalog/*"
+                  - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:database/s3tablespoc_*"
+                  - !Sub "arn:aws:glue:${AWS::Region}:${AWS::AccountId}:table/s3tablespoc_*/*"
+
+        - PolicyName: CloudWatchLogs
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws-glue/*"
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: cost-center
+          Value: !Ref CostTag
+
+Outputs:
+  GlueJobRoleArn:
+    Value: !GetAtt GlueJobRole.Arn
+    Export:
+      Name: !Sub "${ProjectName}-glue-role-arn"

@@ -1,0 +1,83 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  POC S3 Tables — Stack 3/4: Glue Catalog + Athena
+  Database para pipeline B e Athena workgroups isolados por pipeline.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: s3tables-poc
+  CostTag:
+    Type: String
+    Default: stit-poc-s3tables
+
+Resources:
+  # Database name sem hífens — Iceberg identifier não aceita hífens
+  SelfManagedDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: s3tablespoc_selfmanaged
+        Description: "POC S3 Tables — Iceberg self-managed database"
+        LocationUri: !Sub
+          - "s3://${Bucket}/iceberg/"
+          - Bucket: { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-bucket" }
+
+  AthenaWorkgroupManaged:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: !Sub "${ProjectName}-managed"
+      Description: "Queries no pipeline A (S3 Tables)"
+      State: ENABLED
+      WorkGroupConfiguration:
+        ResultConfiguration:
+          OutputLocation: !Sub
+            - "s3://${Bucket}/managed/"
+            - Bucket: { Fn::ImportValue: !Sub "${ProjectName}-athena-results-bucket" }
+        BytesScannedCutoffPerQuery: 107374182400
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: true
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: pipeline
+          Value: managed
+        - Key: cost-center
+          Value: !Ref CostTag
+
+  AthenaWorkgroupSelfManaged:
+    Type: AWS::Athena::WorkGroup
+    Properties:
+      Name: !Sub "${ProjectName}-selfmanaged"
+      Description: "Queries no pipeline B (self-managed)"
+      State: ENABLED
+      WorkGroupConfiguration:
+        ResultConfiguration:
+          OutputLocation: !Sub
+            - "s3://${Bucket}/selfmanaged/"
+            - Bucket: { Fn::ImportValue: !Sub "${ProjectName}-athena-results-bucket" }
+        BytesScannedCutoffPerQuery: 107374182400
+        EnforceWorkGroupConfiguration: true
+        PublishCloudWatchMetricsEnabled: true
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: pipeline
+          Value: selfmanaged
+        - Key: cost-center
+          Value: !Ref CostTag
+
+Outputs:
+  SelfManagedDatabaseName:
+    Value: !Ref SelfManagedDatabase
+    Export:
+      Name: !Sub "${ProjectName}-selfmanaged-db"
+  AthenaWorkgroupManaged:
+    Value: !Ref AthenaWorkgroupManaged
+    Export:
+      Name: !Sub "${ProjectName}-athena-wg-managed"
+  AthenaWorkgroupSelfManaged:
+    Value: !Ref AthenaWorkgroupSelfManaged
+    Export:
+      Name: !Sub "${ProjectName}-athena-wg-selfmanaged"

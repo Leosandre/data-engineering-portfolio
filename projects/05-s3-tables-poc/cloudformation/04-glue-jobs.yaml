@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  POC S3 Tables — Stack 4/4: Glue Jobs (Glue 5.0)
+  Pipeline A usa REST endpoint para S3 Tables.
+  Pipeline B usa GlueCatalog para Iceberg self-managed.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: s3tables-poc
+  CostTag:
+    Type: String
+    Default: stit-poc-s3tables
+
+Resources:
+  GlueJobManaged:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: !Sub "${ProjectName}-etl-managed"
+      Description: "ETL pipeline A — S3 Tables via REST endpoint"
+      Role: { Fn::ImportValue: !Sub "${ProjectName}-glue-role-arn" }
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub
+          - "s3://${B}/scripts/etl_s3tables.py"
+          - B: { Fn::ImportValue: !Sub "${ProjectName}-glue-scripts-bucket" }
+        PythonVersion: "3"
+      GlueVersion: "5.0"
+      WorkerType: G.1X
+      NumberOfWorkers: 2
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      DefaultArguments:
+        "--enable-auto-scaling": "true"
+        "--enable-metrics": "true"
+        "--enable-continuous-cloudwatch-log": "true"
+        "--datalake-formats": "iceberg"
+        "--RAW_BUCKET": { Fn::ImportValue: !Sub "${ProjectName}-raw-bucket" }
+        "--TABLE_BUCKET_ARN": { Fn::ImportValue: !Sub "${ProjectName}-managed-table-bucket-arn" }
+      Tags:
+        project: !Ref ProjectName
+        pipeline: managed
+        cost-center: !Ref CostTag
+
+  GlueJobSelfManaged:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: !Sub "${ProjectName}-etl-selfmanaged"
+      Description: "ETL pipeline B — Iceberg self-managed via GlueCatalog"
+      Role: { Fn::ImportValue: !Sub "${ProjectName}-glue-role-arn" }
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub
+          - "s3://${B}/scripts/etl_selfmanaged.py"
+          - B: { Fn::ImportValue: !Sub "${ProjectName}-glue-scripts-bucket" }
+        PythonVersion: "3"
+      GlueVersion: "5.0"
+      WorkerType: G.1X
+      NumberOfWorkers: 2
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      DefaultArguments:
+        "--enable-auto-scaling": "true"
+        "--enable-metrics": "true"
+        "--enable-continuous-cloudwatch-log": "true"
+        "--datalake-formats": "iceberg"
+        "--RAW_BUCKET": { Fn::ImportValue: !Sub "${ProjectName}-raw-bucket" }
+        "--SELFMANAGED_BUCKET": { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-bucket" }
+        "--DATABASE_NAME": { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-db" }
+      Tags:
+        project: !Ref ProjectName
+        pipeline: selfmanaged
+        cost-center: !Ref CostTag
+
+  GlueJobCompaction:
+    Type: AWS::Glue::Job
+    Properties:
+      Name: !Sub "${ProjectName}-compaction-selfmanaged"
+      Description: "Compaction manual para pipeline B"
+      Role: { Fn::ImportValue: !Sub "${ProjectName}-glue-role-arn" }
+      Command:
+        Name: glueetl
+        ScriptLocation: !Sub
+          - "s3://${B}/scripts/compaction_selfmanaged.py"
+          - B: { Fn::ImportValue: !Sub "${ProjectName}-glue-scripts-bucket" }
+        PythonVersion: "3"
+      GlueVersion: "5.0"
+      WorkerType: G.1X
+      NumberOfWorkers: 2
+      DefaultArguments:
+        "--enable-auto-scaling": "true"
+        "--enable-metrics": "true"
+        "--enable-continuous-cloudwatch-log": "true"
+        "--datalake-formats": "iceberg"
+        "--SELFMANAGED_BUCKET": { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-bucket" }
+        "--DATABASE_NAME": { Fn::ImportValue: !Sub "${ProjectName}-selfmanaged-db" }
+      Tags:
+        project: !Ref ProjectName
+        pipeline: selfmanaged
+        cost-center: !Ref CostTag
+
+Outputs:
+  GlueJobManagedName:
+    Value: !Ref GlueJobManaged
+    Export:
+      Name: !Sub "${ProjectName}-glue-job-managed"
+  GlueJobSelfManagedName:
+    Value: !Ref GlueJobSelfManaged
+    Export:
+      Name: !Sub "${ProjectName}-glue-job-selfmanaged"
+  GlueJobCompactionName:
+    Value: !Ref GlueJobCompaction
+    Export:
+      Name: !Sub "${ProjectName}-glue-job-compaction"

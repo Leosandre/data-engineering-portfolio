@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  POC S3 Tables — Stack 1/4: Storage
+  S3 Table Bucket (pipeline A), S3 buckets para raw data,
+  pipeline B (self-managed), resultados Athena e scripts Glue.
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: s3tables-poc
+  Environment:
+    Type: String
+    Default: poc
+    AllowedValues: [poc, dev, prod]
+  CostTag:
+    Type: String
+    Default: stit-poc-s3tables
+
+Resources:
+  ManagedTableBucket:
+    Type: AWS::S3Tables::TableBucket
+    Properties:
+      TableBucketName: !Sub "${ProjectName}-managed"
+      UnreferencedFileRemoval:
+        Status: Enabled
+        NoncurrentDays: 10
+        UnreferencedDays: 3
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: environment
+          Value: !Ref Environment
+        - Key: pipeline
+          Value: managed
+        - Key: cost-center
+          Value: !Ref CostTag
+
+  RawDataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-raw-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cost-center
+          Value: !Ref CostTag
+
+  SelfManagedBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-selfmanaged-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: environment
+          Value: !Ref Environment
+        - Key: pipeline
+          Value: selfmanaged
+        - Key: cost-center
+          Value: !Ref CostTag
+
+  AthenaResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-athena-results-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: CleanupResults
+            Status: Enabled
+            ExpirationInDays: 7
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cost-center
+          Value: !Ref CostTag
+
+  GlueScriptsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-glue-scripts-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: project
+          Value: !Ref ProjectName
+        - Key: environment
+          Value: !Ref Environment
+        - Key: cost-center
+          Value: !Ref CostTag
+
+Outputs:
+  ManagedTableBucketArn:
+    Value: !GetAtt ManagedTableBucket.TableBucketARN
+    Export:
+      Name: !Sub "${ProjectName}-managed-table-bucket-arn"
+  RawDataBucketName:
+    Value: !Ref RawDataBucket
+    Export:
+      Name: !Sub "${ProjectName}-raw-bucket"
+  SelfManagedBucketName:
+    Value: !Ref SelfManagedBucket
+    Export:
+      Name: !Sub "${ProjectName}-selfmanaged-bucket"
+  SelfManagedBucketArn:
+    Value: !GetAtt SelfManagedBucket.Arn
+    Export:
+      Name: !Sub "${ProjectName}-selfmanaged-bucket-arn"
+  AthenaResultsBucketName:
+    Value: !Ref AthenaResultsBucket
+    Export:
+      Name: !Sub "${ProjectName}-athena-results-bucket"
+  GlueScriptsBucketName:
+    Value: !Ref GlueScriptsBucket
+    Export:
+      Name: !Sub "${ProjectName}-glue-scripts-bucket"

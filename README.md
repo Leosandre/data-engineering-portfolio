@@ -11,6 +11,7 @@ Cada projeto resolve um problema real com dados públicos, documentado com arqui
 | 02 | [Pipeline ANAC — Pontualidade da Aviação Civil](projects/02-anac-voos-pipeline/) | Intermediário | Python, httpx, Polars, DuckDB, Plotly | ✅ Concluído |
 | 03 | [Pipeline GitHub — Flatten de JSON Aninhado](projects/03-github-json-pipeline/) | Intermediário | Python, httpx, Polars, DuckDB, Plotly | ✅ Concluído |
 | 04 | [Data Platform AWS — Multi-Source Integration + ML](projects/04-aws-data-platform/) | Avançado | Terraform, Glue, Redshift, SageMaker, QuickSight | ✅ Concluído |
+| 05 | [POC: S3 Tables vs Iceberg Self-Managed](projects/05-s3-tables-poc/) | Avançado | CloudFormation, Glue 5.0, Athena, S3 Tables, Iceberg | ✅ Concluído |
 
 ## Como navegar
 

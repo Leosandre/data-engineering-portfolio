@@ -1,0 +1,6 @@
+data/
+metrics/*.json
+*.parquet
+__pycache__/
+.venv/
+agentdocs/
