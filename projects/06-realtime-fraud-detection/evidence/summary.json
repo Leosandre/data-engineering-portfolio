@@ -1,0 +1,11 @@
+{
+  "run_duration_min": 30,
+  "tps": 2140,
+  "total_input": 3864177,
+  "total_output": 2081706,
+  "lambda_invocations": 28479,
+  "lambda_errors": 0,
+  "lambda_avg_duration_ms": 380,
+  "sqs_alerts": 26597,
+  "fraud_rate_pct": 2.1
+}

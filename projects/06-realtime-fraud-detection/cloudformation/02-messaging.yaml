@@ -1,0 +1,69 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Fraud Detection POC - Messaging (SNS, SQS)"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: fraud-detection-poc
+
+Resources:
+
+  FraudAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectName}-fraud-alerts"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  FraudAlertsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "${ProjectName}-fraud-alerts-queue"
+      VisibilityTimeout: 60
+      MessageRetentionPeriod: 86400
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  QueueSubscription:
+    Type: AWS::SNS::Subscription
+    Properties:
+      TopicArn: !Ref FraudAlertsTopic
+      Protocol: sqs
+      Endpoint: !GetAtt FraudAlertsQueue.Arn
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref FraudAlertsQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt FraudAlertsQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref FraudAlertsTopic
+
+Outputs:
+  FraudAlertsTopicArn:
+    Value: !Ref FraudAlertsTopic
+    Export:
+      Name: !Sub "${ProjectName}-alerts-topic-arn"
+  FraudAlertsQueueUrl:
+    Value: !Ref FraudAlertsQueue
+    Export:
+      Name: !Sub "${ProjectName}-alerts-queue-url"

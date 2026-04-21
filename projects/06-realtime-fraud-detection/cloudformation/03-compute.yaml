@@ -1,0 +1,149 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Fraud Detection POC - Lambda + IAM + Event Source Mapping"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: fraud-detection-poc
+
+Resources:
+
+  # --- DynamoDB: tabela de estado pra regras (velocity, micro-testing) ---
+
+  DetectionStateTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-detection-state"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: customer_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: customer_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+
+  # --- IAM Role pra Lambda ---
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-lambda-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: fraud-detector-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              # Kinesis: ler do input, escrever no output
+              - Effect: Allow
+                Action:
+                  - kinesis:GetRecords
+                  - kinesis:GetShardIterator
+                  - kinesis:DescribeStream
+                  - kinesis:DescribeStreamSummary
+                  - kinesis:ListShards
+                  - kinesis:ListStreams
+                  - kinesis:SubscribeToShard
+                Resource:
+                  Fn::ImportValue: !Sub "${ProjectName}-transactions-stream-arn"
+              - Effect: Allow
+                Action:
+                  - kinesis:PutRecord
+                  - kinesis:PutRecords
+                Resource:
+                  Fn::ImportValue: !Sub "${ProjectName}-alerts-stream-arn"
+              # DynamoDB: ler perfis, ler/escrever estado
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:BatchGetItem
+                Resource:
+                  - !Sub "arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/${ProjectName}-customer-profiles"
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource: !GetAtt DetectionStateTable.Arn
+              # SNS: publicar alertas
+              - Effect: Allow
+                Action:
+                  - sns:Publish
+                Resource:
+                  Fn::ImportValue: !Sub "${ProjectName}-alerts-topic-arn"
+
+  # --- Lambda Function ---
+
+  FraudDetectorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub "${ProjectName}-detector"
+      Runtime: python3.12
+      Handler: fraud_detector.handler
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 120
+      MemorySize: 512
+      Code:
+        ZipFile: |
+          # placeholder — codigo real eh deployado via update-function-code
+          def handler(event, context):
+              return {"statusCode": 200}
+      Environment:
+        Variables:
+          PROFILES_TABLE: !Sub "${ProjectName}-customer-profiles"
+          STATE_TABLE: !Sub "${ProjectName}-detection-state"
+          OUTPUT_STREAM: !Sub "${ProjectName}-alerts"
+          SNS_TOPIC_ARN:
+            Fn::ImportValue: !Sub "${ProjectName}-alerts-topic-arn"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+
+  # --- Event Source Mapping: Kinesis → Lambda ---
+
+  KinesisEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn:
+        Fn::ImportValue: !Sub "${ProjectName}-transactions-stream-arn"
+      FunctionName: !Ref FraudDetectorFunction
+      StartingPosition: LATEST
+      BatchSize: 500
+      MaximumBatchingWindowInSeconds: 2
+      ParallelizationFactor: 10
+      BisectBatchOnFunctionError: true
+      MaximumRetryAttempts: 2
+
+Outputs:
+  FraudDetectorFunctionArn:
+    Value: !GetAtt FraudDetectorFunction.Arn
+    Export:
+      Name: !Sub "${ProjectName}-detector-function-arn"
+  DetectionStateTableName:
+    Value: !Ref DetectionStateTable
+    Export:
+      Name: !Sub "${ProjectName}-state-table"

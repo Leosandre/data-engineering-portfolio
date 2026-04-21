@@ -1,0 +1,216 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Fraud Detection POC - Storage (Kinesis, DynamoDB, S3, Firehose)"
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: fraud-detection-poc
+
+Resources:
+
+  # --- Kinesis Data Streams ---
+
+  TransactionsStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub "${ProjectName}-transactions"
+      ShardCount: 3
+      RetentionPeriodHours: 24
+      StreamModeDetails:
+        StreamMode: PROVISIONED
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  AlertsStream:
+    Type: AWS::Kinesis::Stream
+    Properties:
+      Name: !Sub "${ProjectName}-alerts"
+      ShardCount: 1
+      RetentionPeriodHours: 24
+      StreamModeDetails:
+        StreamMode: PROVISIONED
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # --- DynamoDB ---
+
+  CustomerProfilesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "${ProjectName}-customer-profiles"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: customer_id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: customer_id
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: ttl
+        Enabled: true
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # --- S3 ---
+
+  DataLakeBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-lake-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      LifecycleConfiguration:
+        Rules:
+          - Id: cleanup-after-poc
+            Status: Enabled
+            ExpirationInDays: 7
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  AthenaResultsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectName}-athena-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      LifecycleConfiguration:
+        Rules:
+          - Id: cleanup-results
+            Status: Enabled
+            ExpirationInDays: 3
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # --- Firehose (transacoes processadas → S3) ---
+
+  ProcessedDeliveryStream:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    DependsOn: FirehoseRole
+    Properties:
+      DeliveryStreamName: !Sub "${ProjectName}-processed-to-s3"
+      DeliveryStreamType: KinesisStreamAsSource
+      KinesisStreamSourceConfiguration:
+        KinesisStreamARN: !GetAtt AlertsStream.Arn
+        RoleARN: !GetAtt FirehoseRole.Arn
+      ExtendedS3DestinationConfiguration:
+        BucketARN: !GetAtt DataLakeBucket.Arn
+        Prefix: "processed/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/hour=!{timestamp:HH}/"
+        ErrorOutputPrefix: "errors/"
+        BufferingHints:
+          IntervalInSeconds: 60
+          SizeInMBs: 5
+        CompressionFormat: GZIP
+        RoleARN: !GetAtt FirehoseRole.Arn
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+
+  # --- IAM pra Firehose ---
+
+  FirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectName}-firehose-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: sts:AssumeRole
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectName
+        - Key: Environment
+          Value: poc
+        - Key: ManagedBy
+          Value: cloudformation
+      Policies:
+        - PolicyName: firehose-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kinesis:DescribeStream
+                  - kinesis:GetShardIterator
+                  - kinesis:GetRecords
+                  - kinesis:ListShards
+                Resource: !GetAtt AlertsStream.Arn
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetBucketLocation
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt DataLakeBucket.Arn
+                  - !Sub "${DataLakeBucket.Arn}/*"
+
+Outputs:
+  TransactionsStreamArn:
+    Value: !GetAtt TransactionsStream.Arn
+    Export:
+      Name: !Sub "${ProjectName}-transactions-stream-arn"
+  TransactionsStreamName:
+    Value: !Ref TransactionsStream
+    Export:
+      Name: !Sub "${ProjectName}-transactions-stream-name"
+  AlertsStreamArn:
+    Value: !GetAtt AlertsStream.Arn
+    Export:
+      Name: !Sub "${ProjectName}-alerts-stream-arn"
+  AlertsStreamName:
+    Value: !Ref AlertsStream
+    Export:
+      Name: !Sub "${ProjectName}-alerts-stream-name"
+  CustomerProfilesTableName:
+    Value: !Ref CustomerProfilesTable
+    Export:
+      Name: !Sub "${ProjectName}-profiles-table"
+  DataLakeBucketName:
+    Value: !Ref DataLakeBucket
+    Export:
+      Name: !Sub "${ProjectName}-lake-bucket"
+  AthenaResultsBucketName:
+    Value: !Ref AthenaResultsBucket
+    Export:
+      Name: !Sub "${ProjectName}-athena-bucket"
