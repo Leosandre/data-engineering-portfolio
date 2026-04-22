@@ -47,3 +47,4 @@ Thumbs.db
 
 # Terraform lock
 .terraform.tfstate.lock.info
+agentdocs/
