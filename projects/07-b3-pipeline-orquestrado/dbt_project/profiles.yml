@@ -4,10 +4,10 @@ b3_pipeline:
     prod:
       type: redshift
       method: database
-      host: b3-pipeline-wg.306158388479.us-east-1.redshift-serverless.amazonaws.com
+      host: "{{ env_var('REDSHIFT_HOST') }}"
       port: 5439
-      user: admin
-      password: "B3pipeline#2024"
+      user: "{{ env_var('REDSHIFT_USER', 'admin') }}"
+      password: "{{ env_var('REDSHIFT_PASSWORD') }}"
       dbname: dev
       schema: raw
       threads: 4

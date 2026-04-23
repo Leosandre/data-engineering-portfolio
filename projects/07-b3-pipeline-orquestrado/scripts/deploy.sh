@@ -47,7 +47,7 @@ $AWS cloudformation deploy \
   --stack-name "${STACK_PREFIX}-compute" \
   --parameter-overrides \
     ProjectTag=$STACK_PREFIX \
-    RedshiftPassword='B3pipeline#2024' \
+    RedshiftPassword="${REDSHIFT_PASSWORD:?Set REDSHIFT_PASSWORD env var}" \
     KeyPairName=$KEY_NAME \
   --no-fail-on-empty-changeset \
   --tags Project=$STACK_PREFIX
