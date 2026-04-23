@@ -1,0 +1,14 @@
+b3_pipeline:
+  target: prod
+  outputs:
+    prod:
+      type: redshift
+      method: database
+      host: b3-pipeline-wg.306158388479.us-east-1.redshift-serverless.amazonaws.com
+      port: 5439
+      user: admin
+      password: "B3pipeline#2024"
+      dbname: dev
+      schema: raw
+      threads: 4
+      ra3_node: true

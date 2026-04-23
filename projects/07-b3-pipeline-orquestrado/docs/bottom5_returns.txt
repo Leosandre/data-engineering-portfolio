@@ -1,0 +1,25 @@
+5
+COLUMNMETADATA	True	False	False	ticker	0	ticker	1	10	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	True	False	False	asset_type	0	asset_type	1	10	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	True	False	False	sector	0	sector	1	100	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	False	False	True	return_pct	0	return_pct	1	17	17			float8
+RECORDS		MGLU3
+RECORDS		STOCK
+RECORDS		Consumer Cyclical
+RECORDS	-29.380000000000003	
+RECORDS		CSNA3
+RECORDS		STOCK
+RECORDS		Basic Materials
+RECORDS	-20.75	
+RECORDS		CSAN3
+RECORDS		STOCK
+RECORDS		Energy
+RECORDS	-18.32	
+RECORDS		HAPV3
+RECORDS		STOCK
+RECORDS		Financial Services
+RECORDS	-16.48	
+RECORDS		BEEF3
+RECORDS		STOCK
+RECORDS		Consumer Defensive
+RECORDS	-15.38	

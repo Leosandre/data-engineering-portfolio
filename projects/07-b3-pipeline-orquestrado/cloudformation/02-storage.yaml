@@ -1,0 +1,112 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "B3 Pipeline — S3, SNS, IAM"
+
+Parameters:
+  ProjectTag:
+    Type: String
+    Default: b3-pipeline
+
+Resources:
+  DataBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${ProjectTag}-data-${AWS::AccountId}"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+
+  AlertTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "${ProjectTag}-alerts"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+
+  Ec2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectTag}-ec2-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: pipeline-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["s3:GetObject*", "s3:PutObject*", "s3:ListBucket", "s3:DeleteObject*"]
+                Resource:
+                  - !GetAtt DataBucket.Arn
+                  - !Sub "${DataBucket.Arn}/*"
+              - Effect: Allow
+                Action:
+                  - redshift-data:ExecuteStatement
+                  - redshift-data:DescribeStatement
+                  - redshift-data:GetStatementResult
+                  - redshift-serverless:GetCredentials
+                Resource: "*"
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref AlertTopic
+              - Effect: Allow
+                Action: ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
+                Resource: "*"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+
+  Ec2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      InstanceProfileName: !Sub "${ProjectTag}-ec2-profile"
+      Roles:
+        - !Ref Ec2Role
+
+  RedshiftRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${ProjectTag}-redshift-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: redshift.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: s3-access
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: ["s3:GetObject", "s3:ListBucket"]
+                Resource:
+                  - !GetAtt DataBucket.Arn
+                  - !Sub "${DataBucket.Arn}/*"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+
+Outputs:
+  DataBucketName:
+    Value: !Ref DataBucket
+    Export:
+      Name: !Sub "${ProjectTag}-data-bucket"
+  AlertTopicArn:
+    Value: !Ref AlertTopic
+    Export:
+      Name: !Sub "${ProjectTag}-alert-topic"
+  Ec2InstanceProfileArn:
+    Value: !GetAtt Ec2InstanceProfile.Arn
+    Export:
+      Name: !Sub "${ProjectTag}-ec2-profile-arn"
+  RedshiftRoleArn:
+    Value: !GetAtt RedshiftRole.Arn
+    Export:
+      Name: !Sub "${ProjectTag}-redshift-role-arn"

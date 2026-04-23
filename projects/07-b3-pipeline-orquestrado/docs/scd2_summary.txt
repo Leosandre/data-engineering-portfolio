@@ -1,0 +1,5 @@
+1
+COLUMNMETADATA	False	False	True	total_rows	0	total_rows	1	19	0			int8
+COLUMNMETADATA	False	False	True	changed_rows	0	changed_rows	1	19	0			int8
+RECORDS	63
+RECORDS	0

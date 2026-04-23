@@ -1,0 +1,31 @@
+name: b3_pipeline
+version: "1.0.0"
+
+config-version: 2
+profile: b3_pipeline
+
+model-paths: ["models"]
+snapshot-paths: ["snapshots"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  price_variation_limit: 0.30  # 30% — circuit breaker B3 é ~15%
+
+models:
+  b3_pipeline:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: staging
+      +materialized: ephemeral
+    marts:
+      +schema: analytics
+      +materialized: table
+
+snapshots:
+  b3_pipeline:
+    +target_schema: snapshots

@@ -1,0 +1,118 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "B3 Pipeline — EC2 (Airflow) + Redshift Serverless"
+
+Parameters:
+  ProjectTag:
+    Type: String
+    Default: b3-pipeline
+  RedshiftPassword:
+    Type: String
+    NoEcho: true
+  KeyPairName:
+    Type: String
+    Description: "EC2 Key Pair para SSH"
+
+Resources:
+  AirflowInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.medium
+      ImageId: ami-0c7217cdde317cfec  # Ubuntu 22.04 us-east-1
+      KeyName: !Ref KeyPairName
+      IamInstanceProfile: !Sub "${ProjectTag}-ec2-profile"
+      SubnetId: !ImportValue
+        Fn::Sub: "${ProjectTag}-subnet-1"
+      SecurityGroupIds:
+        - !ImportValue
+          Fn::Sub: "${ProjectTag}-sg-id"
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          apt-get update -y
+          apt-get install -y python3-pip python3-venv git
+
+          # Criar user airflow
+          useradd -m -s /bin/bash airflow
+          cd /home/airflow
+
+          # Instalar Airflow standalone
+          python3 -m venv venv
+          source venv/bin/activate
+          pip install "apache-airflow==2.9.2" \
+            "apache-airflow-providers-amazon>=8.0.0" \
+            "dbt-redshift==1.8.1" \
+            "yfinance>=0.2.36" \
+            "pandas>=2.0" \
+            "pyarrow>=15.0" \
+            "plotly>=5.18" \
+            "kaleido>=0.2.1"
+
+          # Configurar Airflow
+          export AIRFLOW_HOME=/home/airflow/airflow
+          mkdir -p $AIRFLOW_HOME/dags
+          airflow db init
+          airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@local
+
+          # Iniciar Airflow
+          airflow webserver -p 8080 -D
+          airflow scheduler -D
+
+          chown -R airflow:airflow /home/airflow
+      Tags:
+        - Key: Name
+          Value: !Sub "${ProjectTag}-airflow"
+        - Key: Project
+          Value: !Ref ProjectTag
+
+  RedshiftNamespace:
+    Type: AWS::RedshiftServerless::Namespace
+    Properties:
+      NamespaceName: !Sub "${ProjectTag}-ns"
+      AdminUsername: admin
+      AdminUserPassword: !Ref RedshiftPassword
+      DbName: dev
+      IamRoles:
+        - !ImportValue
+          Fn::Sub: "${ProjectTag}-redshift-role-arn"
+      DefaultIamRoleArn: !ImportValue
+        Fn::Sub: "${ProjectTag}-redshift-role-arn"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+
+  RedshiftWorkgroup:
+    Type: AWS::RedshiftServerless::Workgroup
+    Properties:
+      WorkgroupName: !Sub "${ProjectTag}-wg"
+      NamespaceName: !GetAtt RedshiftNamespace.Namespace.NamespaceName
+      BaseCapacity: 8
+      PubliclyAccessible: true
+      SubnetIds:
+        - !ImportValue
+          Fn::Sub: "${ProjectTag}-subnet-1"
+        - !ImportValue
+          Fn::Sub: "${ProjectTag}-subnet-2"
+      SecurityGroupIds:
+        - !ImportValue
+          Fn::Sub: "${ProjectTag}-sg-id"
+      Tags:
+        - Key: Project
+          Value: !Ref ProjectTag
+
+Outputs:
+  AirflowInstanceId:
+    Value: !Ref AirflowInstance
+  AirflowPublicIp:
+    Value: !GetAtt AirflowInstance.PublicIp
+  AirflowUrl:
+    Value: !Sub "http://${AirflowInstance.PublicIp}:8080"
+  RedshiftWorkgroup:
+    Value: !Sub "${ProjectTag}-wg"
+  RedshiftEndpoint:
+    Value: !GetAtt RedshiftWorkgroup.Workgroup.Endpoint.Address

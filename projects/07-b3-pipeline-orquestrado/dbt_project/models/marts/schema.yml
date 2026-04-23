@@ -1,0 +1,31 @@
+version: 2
+
+models:
+  - name: fct_daily_quotes
+    description: "Fato principal - cotacoes diarias enriquecidas (incremental)"
+    columns:
+      - name: ticker
+        tests: [not_null]
+      - name: trade_date
+        tests: [not_null]
+      - name: close_price
+        tests: [not_null]
+      - name: volume
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+  - name: dim_companies
+    columns:
+      - name: ticker
+        tests: [not_null, unique]
+      - name: sector
+        tests: [not_null]
+
+  - name: agg_sector_performance
+    columns:
+      - name: sector
+        tests: [not_null]
+      - name: trade_date
+        tests: [not_null]

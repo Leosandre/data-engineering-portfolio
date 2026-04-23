@@ -1,0 +1,21 @@
+total_records: 1197
+assets: 63
+trading_days: 19
+first_date: 2024-12-02
+last_date: 2024-12-30
+2
+COLUMNMETADATA	True	False	False	asset_type	0	asset_type	1	10	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	False	False	True	records	0	records	1	19	0			int8
+COLUMNMETADATA	False	False	True	assets	0	assets	1	19	0			int8
+COLUMNMETADATA	False	False	True	avg_price	0	avg_price	1	17	17			float8
+COLUMNMETADATA	False	False	True	total_vol_mm	0	total_vol_mm	1	20	0			numeric
+RECORDS			STOCK
+RECORDS		912	
+RECORDS		48	
+RECORDS	21.34		
+RECORDS			12747
+RECORDS			FII
+RECORDS		285	
+RECORDS		15	
+RECORDS	63.14		
+RECORDS			96

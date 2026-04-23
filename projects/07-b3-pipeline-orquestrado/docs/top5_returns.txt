@@ -1,0 +1,25 @@
+5
+COLUMNMETADATA	True	False	False	ticker	0	ticker	1	10	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	True	False	False	asset_type	0	asset_type	1	10	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	True	False	False	sector	0	sector	1	100	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	False	False	True	return_pct	0	return_pct	1	17	17			float8
+RECORDS		B3SA3
+RECORDS		STOCK
+RECORDS		Financial Services
+RECORDS	10.15	
+RECORDS		KNRI11
+RECORDS		FII
+RECORDS		Real Estate
+RECORDS	6.44	
+RECORDS		IRBR3
+RECORDS		STOCK
+RECORDS		Financial Services
+RECORDS	5.96	
+RECORDS		HGLG11
+RECORDS		FII
+RECORDS		Real Estate
+RECORDS	5.49	
+RECORDS		KLBN11
+RECORDS		STOCK
+RECORDS		Basic Materials
+RECORDS	4.6899999999999995	

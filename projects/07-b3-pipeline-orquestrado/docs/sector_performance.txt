@@ -1,0 +1,57 @@
+13
+COLUMNMETADATA	True	False	False	asset_type	0	asset_type	1	10	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	True	False	False	sector	0	sector	1	100	0	raw_analytics	fct_daily_quotes	varchar
+COLUMNMETADATA	False	False	True	assets	0	assets	1	19	0			int8
+COLUMNMETADATA	False	False	True	avg_daily_return_pct	0	avg_daily_return_pct	1	17	17			float8
+RECORDS			FII
+RECORDS			Real Estate
+RECORDS		12	
+RECORDS	0.149		
+RECORDS			FII
+RECORDS			Financial Services
+RECORDS		2	
+RECORDS	0.051000000000000004		
+RECORDS			STOCK
+RECORDS			Technology
+RECORDS		2	
+RECORDS	-0.161		
+RECORDS			STOCK
+RECORDS			Real Estate
+RECORDS		2	
+RECORDS	-0.174		
+RECORDS			STOCK
+RECORDS			Financial Services
+RECORDS		8	
+RECORDS	-0.186		
+RECORDS			STOCK
+RECORDS			Communication Services
+RECORDS		1	
+RECORDS	-0.21800000000000003		
+RECORDS			STOCK
+RECORDS			Industrials
+RECORDS		3	
+RECORDS	-0.318		
+RECORDS			STOCK
+RECORDS			Energy
+RECORDS		5	
+RECORDS	-0.335		
+RECORDS			STOCK
+RECORDS			Utilities
+RECORDS		7	
+RECORDS	-0.33899999999999997		
+RECORDS			STOCK
+RECORDS			Basic Materials
+RECORDS		8	
+RECORDS	-0.355		
+RECORDS			STOCK
+RECORDS			Healthcare
+RECORDS		2	
+RECORDS	-0.363		
+RECORDS			STOCK
+RECORDS			Consumer Defensive
+RECORDS		5	
+RECORDS	-0.442		
+RECORDS			STOCK
+RECORDS			Consumer Cyclical
+RECORDS		5	
+RECORDS	-0.623		

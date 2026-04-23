@@ -1,0 +1,21 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: "raw"
+    tables:
+      - name: quotes
+        description: "Cotações diárias brutas do yfinance"
+        columns:
+          - name: trade_date
+            tests: [not_null]
+          - name: ticker
+            tests: [not_null]
+          - name: close_price
+            tests: [not_null]
+
+      - name: companies
+        description: "Dados cadastrais das empresas"
+        columns:
+          - name: ticker
+            tests: [not_null, unique]
